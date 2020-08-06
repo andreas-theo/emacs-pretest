@@ -1,12 +1,12 @@
 %global _hardened_build 1
-%global pretest_version 27.1-rc1
+%global pretest_version 27.1-rc2
 
 # This file is encoded in UTF-8.  -*- coding: utf-8 -*-
 Summary:       GNU Emacs text editor
 Name:          emacs
 Epoch:         1
 Version:       27.1
-Release:       0.1%{?dist}
+Release:       0.2%{?dist}
 License:       GPLv3+ and CC0-1.0
 URL:           http://www.gnu.org/software/emacs/
 Source0:       https://alpha.gnu.org/gnu/emacs/pretest/emacs-%{pretest_version}.tar.xz
@@ -482,6 +482,9 @@ rm %{buildroot}%{_datadir}/icons/hicolor/scalable/mimetypes/emacs-document23.svg
 %{_includedir}/emacs-module.h
 
 %changelog
+* Sat Aug 06 2020 Bhavin Gandhi <bhavin7392@gmail.com> - 1:27.1-0.2
+- Update to pretest 27.1-rc2
+
 * Sat Aug 01 2020 Bhavin Gandhi <bhavin7392@gmail.com> - 1:27.1-0.1
 - Update to pretest 27.1-rc1
 - Add systemd-devel to support Type=notify in unit file
