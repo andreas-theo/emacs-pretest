@@ -113,8 +113,8 @@ index 866e43f..cda7a9b 100644
 +  sprintf (dump_file, "%s%c%s-%s%s",
 +           path_exec, DIRECTORY_SEP, argv0_base, hexbuf, suffix);
  #if !defined (NS_SELF_CONTAINED)
-   /* Assume the Emacs binary lives in a sibling directory as set up by
-      the default installation configuration.  */
+   if (!(emacs_executable && *emacs_executable))
+     {
 @@ -1387,6 +1397,23 @@ main (int argc, char **argv)
        exit (0);
      }
