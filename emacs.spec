@@ -4,7 +4,7 @@
 Summary:       GNU Emacs text editor
 Name:          emacs
 Epoch:         1
-Version:       28.1.90
+Version:       28.1.91
 Release:       1%{?dist}
 License:       GPLv3+ and CC0
 URL:           http://www.gnu.org/software/emacs/
@@ -512,6 +512,9 @@ desktop-file-validate %{buildroot}/%{_datadir}/applications/*.desktop
 %{_includedir}/emacs-module.h
 
 %changelog
+* Sun Sep  4 2022 Bhavin Gandhi <bhavin192@fedoraproject.org> - 1:28.1.91-1
+- Update to pretest 28.1.91
+
 * Thu Jul 21 2022 Fedora Release Engineering <releng@fedoraproject.org> - 1:28.1-3
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_37_Mass_Rebuild
 
