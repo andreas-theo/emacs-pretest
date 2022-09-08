@@ -5,7 +5,7 @@ Summary:       GNU Emacs text editor
 Name:          emacs
 Epoch:         1
 Version:       28.1.91
-Release:       1%{?dist}
+Release:       2%{?dist}
 License:       GPLv3+ and CC0
 URL:           http://www.gnu.org/software/emacs/
 Source0:       https://alpha.gnu.org/gnu/emacs/pretest/emacs-%{version}.tar.xz
@@ -68,6 +68,7 @@ BuildRequires: harfbuzz-devel
 BuildRequires: jansson-devel
 BuildRequires: systemd-devel
 BuildRequires: libgccjit-devel
+BuildRequires: systemd-rpm-macros
 
 BuildRequires: gtk3-devel
 BuildRequires: webkit2gtk3-devel
@@ -512,6 +513,9 @@ desktop-file-validate %{buildroot}/%{_datadir}/applications/*.desktop
 %{_includedir}/emacs-module.h
 
 %changelog
+* Thu Sep  8 2022 Bhavin Gandhi <bhavin192@fedoraproject.org> - 1:28.1.91-2
+- Add systemd-rpm-macros as a build dependency
+
 * Sun Sep  4 2022 Bhavin Gandhi <bhavin192@fedoraproject.org> - 1:28.1.91-1
 - Update to pretest 28.1.91
 
