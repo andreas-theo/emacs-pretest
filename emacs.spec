@@ -1,15 +1,16 @@
 %global _hardened_build 1
+%global pretest_version 28.3-rc1
 
 # This file is encoded in UTF-8.  -*- coding: utf-8 -*-
 Summary:       GNU Emacs text editor
 Name:          emacs
 Epoch:         1
-Version:       28.2
-Release:       4%{?dist}
+Version:       28.3
+Release:       0.1%{?dist}
 License:       GPLv3+ and CC0
 URL:           http://www.gnu.org/software/emacs/
-Source0:       https://ftp.gnu.org/gnu/emacs/emacs-%{version}.tar.xz
-Source1:       https://ftp.gnu.org/gnu/emacs/emacs-%{version}.tar.xz.sig
+Source0:       https://alpha.gnu.org/gnu/emacs/pretest/emacs-%{pretest_version}.tar.xz
+Source1:       https://alpha.gnu.org/gnu/emacs/pretest/emacs-%{pretest_version}.tar.xz.sig
 # Stefan Kangas' key
 Source2:       https://keys.openpgp.org/vks/v1/by-fingerprint/CEA1DE21AB108493CC9C65742E82323B8F4353EE
 Source3:       https://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;f=lib/cdefs.h;hb=refs/heads/master#./cdefs.h
@@ -28,11 +29,9 @@ Patch3:        emacs-libdir-vs-systemd.patch
 Patch4:        emacs-pdmp-fingerprint.patch
 Patch5:        emacs-configure-c99-1.patch
 Patch6:        emacs-configure-c99-2.patch
-# CVE-2022-45939
-Patch7:        https://git.savannah.gnu.org/cgit/emacs.git/patch/?id=d48bb4874bc6cd3e69c7a15fc3c91cc141025c51#./fixed-ctags-local-command-execute-vulnerability.patch
 # https://debbugs.gnu.org/cgi/bugreport.cgi?bug=60208
 # backport of https://git.savannah.gnu.org/cgit/emacs.git/patch/?id=e59216d3be86918b995bd63273c851ebc6176a83
-Patch8:        native-compile-with_-Q.patch
+Patch7:        native-compile-with_-Q.patch
 
 BuildRequires: gcc
 BuildRequires: atk-devel
@@ -218,8 +217,7 @@ cp -p %{SOURCE3} lib/
 %patch4 -p1 -b .pdmp-fingerprint
 %patch5 -p1
 %patch6 -p1
-%patch7 -p1 -b .ctags-local-execution-cve
-%patch8 -p1 -b .native-compile-Q
+%patch7 -p1 -b .native-compile-Q
 autoconf
 
 grep -v "tetris.elc" lisp/Makefile.in > lisp/Makefile.in.new \
@@ -544,6 +542,9 @@ desktop-file-validate %{buildroot}/%{_datadir}/applications/*.desktop
 %{_includedir}/emacs-module.h
 
 %changelog
+* Tue Feb 28 2023 Bhavin Gandhi <bhavin192@fedoraproject.org> - 1:28.3-0.1
+- Emacs 28.3-rc1
+
 * Fri Jan 27 2023 Dan Čermák <dan.cermak@cgc-instruments.com> - 1:28.2-4
 - Ensure that emacs-nox loads the correct eln files
 
@@ -554,7 +555,7 @@ desktop-file-validate %{buildroot}/%{_datadir}/applications/*.desktop
 - Don't include everything in %%emacs_libexecdir in common subpackage, fixes rhbz#2160550
 - Don't remove exec permissions from eln files, fixes rhbz#2160547
 
-* Tue Nov  1 2022 Dan Čermák <dan.cermak@cgc-instruments.com> - 1:28.2-1
+* Tue Dec 31 2022 Dan Čermák <dan.cermak@cgc-instruments.com> - 1:28.2-1
 - New upstream release 28.2, fixes rhbz#2126048
 - Add patch to fix CVE-2022-45939, fixes rhbz#2149381
 - spawn native-compilation processes with -Q rhbz#2155824 (petersen)
