@@ -1,18 +1,18 @@
 %global _hardened_build 1
-%global pretest_version 28.3-rc1
+%global pretest_version 29.0.90
 
 # This file is encoded in UTF-8.  -*- coding: utf-8 -*-
 Summary:       GNU Emacs text editor
 Name:          emacs
 Epoch:         1
-Version:       28.3
-Release:       0.1%{?dist}
+Version:       29.0.90
+Release:       1%{?dist}
 License:       GPLv3+ and CC0
 URL:           http://www.gnu.org/software/emacs/
 Source0:       https://alpha.gnu.org/gnu/emacs/pretest/emacs-%{pretest_version}.tar.xz
 Source1:       https://alpha.gnu.org/gnu/emacs/pretest/emacs-%{pretest_version}.tar.xz.sig
 # Stefan Kangas' key
-Source2:       https://keys.openpgp.org/vks/v1/by-fingerprint/CEA1DE21AB108493CC9C65742E82323B8F4353EE
+Source2:       https://keys.openpgp.org/vks/v1/by-fingerprint/17E90D521672C04631B1183EE78DAE0F3115E06B
 Source3:       https://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;f=lib/cdefs.h;hb=refs/heads/master#./cdefs.h
 Source4:       dotemacs.el
 Source5:       site-start.el
@@ -20,18 +20,18 @@ Source6:       default.el
 # Emacs Terminal Mode, #551949, #617355
 Source7:       emacs-terminal.desktop
 Source8:       emacs-terminal.sh
+Source9:       emacs-desktop.sh
 # rhbz#713600
 Patch1:        emacs-spellchecker.patch
 Patch2:        emacs-system-crypto-policies.patch
 # causes a dependency on pkgconfig(systemd)
 # => remove it if we stop using this patch
 Patch3:        emacs-libdir-vs-systemd.patch
-Patch4:        emacs-pdmp-fingerprint.patch
+# Avoid using the pure GTK build on X11 where it is unsupported:
+Patch4:        emacs-desktop.patch
 Patch5:        emacs-configure-c99-1.patch
-Patch6:        emacs-configure-c99-2.patch
 # https://debbugs.gnu.org/cgi/bugreport.cgi?bug=60208
 # backport of https://git.savannah.gnu.org/cgit/emacs.git/patch/?id=e59216d3be86918b995bd63273c851ebc6176a83
-Patch7:        native-compile-with_-Q.patch
 
 BuildRequires: gcc
 BuildRequires: atk-devel
@@ -75,6 +75,9 @@ BuildRequires: harfbuzz-devel
 BuildRequires: jansson-devel
 BuildRequires: systemd-devel
 BuildRequires: libgccjit-devel
+BuildRequires: libtree-sitter-devel
+BuildRequires: libsqlite3x-devel
+BuildRequires: libwebp-devel
 
 BuildRequires: gtk3-devel
 BuildRequires: webkit2gtk3-devel
@@ -102,6 +105,7 @@ Requires(preun): %{_sbindir}/alternatives
 Requires(posttrans): %{_sbindir}/alternatives
 Requires:      emacs-common = %{epoch}:%{version}-%{release}
 Provides:      emacs(bin) = %{epoch}:%{version}-%{release}
+Supplements:   (libwayland-server and emacs-common)
 
 %define site_lisp %{_datadir}/emacs/site-lisp
 %define site_start_d %{site_lisp}/site-start.d
@@ -110,16 +114,33 @@ Provides:      emacs(bin) = %{epoch}:%{version}-%{release}
 %define emacs_libexecdir %{_libexecdir}/emacs/%{version}/%{_host}
 %define native_lisp %{_libdir}/emacs/%{version}/native-lisp
 
-%description
-Emacs is a powerful, customizable, self-documenting, modeless text
+%global desc %{expand:Emacs is a powerful, customizable, self-documenting, modeless text
 editor. Emacs contains special code editing features, a scripting
 language (elisp), and the capability to read mail, news, and more
 without leaving the editor.
+}
 
-This package provides an emacs binary with support for X windows.
+%description
+%desc
+This package provides an emacs binary with support for Wayland, using the
+GTK toolkit.
+
+%package gtk+x11
+Summary:       GNU Emacs text editor with GTK toolkit X support
+Requires:      libgccjit
+Requires(preun): %{_sbindir}/alternatives
+Requires(posttrans): %{_sbindir}/alternatives
+Requires:      emacs-common = %{epoch}:%{version}-%{release}
+Provides:      emacs(bin) = %{epoch}:%{version}-%{release}
+Supplements:   (xorg-x11-server-Xorg and emacs-common)
+
+%description gtk+x11
+%desc
+This package provides an emacs-gtk+x11 binary with support for the X
+Window System, using the GTK toolkit.
 
 %package lucid
-Summary:       GNU Emacs text editor with LUCID toolkit X support
+Summary:       GNU Emacs text editor with Lucid toolkit X support
 Requires:      libgccjit
 Requires(preun): %{_sbindir}/alternatives
 Requires(posttrans): %{_sbindir}/alternatives
@@ -127,13 +148,9 @@ Requires:      emacs-common = %{epoch}:%{version}-%{release}
 Provides:      emacs(bin) = %{epoch}:%{version}-%{release}
 
 %description lucid
-Emacs is a powerful, customizable, self-documenting, modeless text
-editor. Emacs contains special code editing features, a scripting
-language (elisp), and the capability to read mail, news, and more
-without leaving the editor.
-
-This package provides an emacs binary with support for X windows
-using LUCID toolkit.
+%desc
+This package provides an emacs-lucid binary with support for the X
+Window System, using the Lucid toolkit.
 
 %package nox
 Summary:       GNU Emacs text editor without X support
@@ -144,13 +161,9 @@ Requires:      emacs-common = %{epoch}:%{version}-%{release}
 Provides:      emacs(bin) = %{epoch}:%{version}-%{release}
 
 %description nox
-Emacs is a powerful, customizable, self-documenting, modeless text
-editor. Emacs contains special code editing features, a scripting
-language (elisp), and the capability to read mail, news, and more
-without leaving the editor.
-
-This package provides an emacs binary with no X windows support for running
-on a terminal.
+%desc
+This package provides an emacs-nox binary with no graphical display
+support, for running on a terminal.
 
 %package common
 Summary:       Emacs common files
@@ -169,14 +182,24 @@ Provides:      emacs-transient = 0.3.7
 # version as of the release of emacs 28.1 is obsoleted
 Obsoletes:     emacs-transient < 0.3.0-4
 
-%description common
-Emacs is a powerful, customizable, self-documenting, modeless text
-editor. Emacs contains special code editing features, a scripting
-language (elisp), and the capability to read mail, news, and more
-without leaving the editor.
+# Emacs 29 introduces new opt-in modes based on the Tree-sitter library,
+# but the traditional modes are still the default.  As Emacs'
+# Tree-sitter integration matures in future versions, we may want to
+# promote these from Suggests to Recommends:
+Suggests:      libtree-sitter-json
 
-This package contains all the common files needed by emacs, emacs-lucid
-or emacs-nox.
+# Ideally, we'd package all tree-sitter parsers as RPMs, but, in the
+# meantime, we need the following packages for
+# treesit-install-language-grammar to be able to build the parsers for
+# us at runtime:
+Suggests:      ((gcc and gcc-c++) or clang)
+Suggests:      git
+
+
+%description common
+%desc
+This package contains all the common files needed by emacs, emacs-gtk+x11,
+emacs-lucid, or emacs-nox.
 
 %package terminal
 Summary:       A desktop menu item for GNU Emacs terminal.
@@ -214,10 +237,8 @@ cp -p %{SOURCE3} lib/
 %patch1 -p1 -b .spellchecker
 %patch2 -p1 -b .system-crypto-policies
 %patch3 -p1 -b .libdir-vs-systemd
-%patch4 -p1 -b .pdmp-fingerprint
+%patch4 -p1
 %patch5 -p1
-%patch6 -p1
-%patch7 -p1 -b .native-compile-Q
 autoconf
 
 grep -v "tetris.elc" lisp/Makefile.in > lisp/Makefile.in.new \
@@ -253,21 +274,23 @@ LDFLAGS=-Wl,-z,relro;  export LDFLAGS;
 %configure --with-dbus --with-gif --with-jpeg --with-png --with-rsvg \
            --with-tiff --with-xft --with-xpm --with-x-toolkit=lucid --with-gpm=no \
            --with-modules --with-harfbuzz --with-cairo --with-json \
-           --with-native-compilation
-%{setarch} %make_build bootstrap NATIVE_FULL_AOT=1
+           --with-native-compilation=aot --with-tree-sitter --with-sqlite3 \
+           --with-webp --with-xinput2
+%{setarch} %make_build bootstrap
 %{setarch} %make_build
 cd ..
 
 # Build binary without X support
 mkdir build-nox && cd build-nox
 ln -s ../configure .
-%configure --with-x=no --with-modules --with-json --with-native-compilation
-%{setarch} %make_build bootstrap NATIVE_FULL_AOT=1
+%configure --with-x=no --with-modules --with-json \
+           --with-native-compilation=aot --with-tree-sitter --with-sqlite3
+%{setarch} %make_build bootstrap
 %{setarch} %make_build
 cd ..
 
-# Build GTK+ binary
-mkdir build-gtk && cd build-gtk
+# Build GTK/X11 binary
+mkdir build-gtk+x11 && cd build-gtk+x11
 ln -s ../configure .
 
 LDFLAGS=-Wl,-z,relro;  export LDFLAGS;
@@ -275,13 +298,29 @@ LDFLAGS=-Wl,-z,relro;  export LDFLAGS;
 %configure --with-dbus --with-gif --with-jpeg --with-png --with-rsvg \
            --with-tiff --with-xpm --with-x-toolkit=gtk3 --with-gpm=no \
            --with-xwidgets --with-modules --with-harfbuzz --with-cairo --with-json \
-           --with-native-compilation
-%{setarch} %make_build bootstrap NATIVE_FULL_AOT=1
+           --with-native-compilation=aot --with-tree-sitter --with-sqlite3 \
+           --with-webp --with-xinput2
+%{setarch} %make_build bootstrap
+%{setarch} %make_build
+cd ..
+
+# Build pure GTK binary
+mkdir build-pgtk && cd build-pgtk
+ln -s ../configure .
+
+LDFLAGS=-Wl,-z,relro;  export LDFLAGS;
+
+%configure --with-dbus --with-gif --with-jpeg --with-png --with-rsvg \
+           --with-tiff --with-xpm --with-pgtk --with-gpm=no \
+           --with-xwidgets --with-modules --with-harfbuzz --with-cairo --with-json \
+           --with-native-compilation=aot --with-tree-sitter --with-sqlite3 \
+           --with-webp
+%{setarch} %make_build bootstrap
 %{setarch} %make_build
 cd ..
 
 # Remove versioned file so that we end up with .1 suffix and only one DOC file
-rm build-{gtk,lucid,nox}/src/emacs-%{version}.*
+rm build-{gtk+x11,lucid,nox,pgtk}/src/emacs-%{version}.*
 
 # Create pkgconfig file
 cat > emacs.pc << EOF
@@ -304,7 +343,7 @@ cat > macros.emacs << EOF
 EOF
 
 %install
-cd build-gtk
+cd build-pgtk
 %make_install
 cd ..
 
@@ -316,7 +355,10 @@ touch %{buildroot}%{_bindir}/emacs
 gunzip %{buildroot}%{_datadir}/emacs/%{version}/lisp/jka-compr.el.gz
 gunzip %{buildroot}%{_datadir}/emacs/%{version}/lisp/jka-cmpr-hook.el.gz
 
-# Install the emacs with LUCID toolkit
+# Install the emacs with GTK toolkit
+install -p -m 0755 build-gtk+x11/src/emacs %{buildroot}%{_bindir}/emacs-%{version}-gtk+x11
+
+# Install the emacs with Lucid toolkit
 install -p -m 0755 build-lucid/src/emacs %{buildroot}%{_bindir}/emacs-%{version}-lucid
 
 # Install the emacs without X
@@ -365,6 +407,9 @@ rm -f %{buildroot}%{_infodir}/dir
 desktop-file-install --dir=%{buildroot}%{_datadir}/applications \
                      %SOURCE7
 
+# Install a wrapper to avoid running the Wayland-only build on X11
+install -p -m 0755 %SOURCE9 %{buildroot}%{_bindir}/emacs-desktop
+
 # Remove duplicate desktop-related files
 rm %{buildroot}%{_datadir}/%{name}/%{version}/etc/%{name}.{desktop,service}
 
@@ -388,7 +433,7 @@ rm -f *-filelist {common,el}-*-files
 )
 
 # Sorted list of info files
-%define info_files auth autotype bovine calc ccmode cl dbus dired-x ebrowse ede ediff edt efaq eieio eintr elisp emacs-gnutls emacs-mime emacs epa erc ert eshell eudc eww flymake forms gnus htmlfontify idlwave ido mairix-el message mh-e modus-themes newsticker nxml-mode octave-mode org pcl-cvs pgg rcirc reftex remember sasl sc semantic ses sieve smtpmail speedbar srecode todo-mode tramp transient url vhdl-mode vip viper widget wisent woman
+%define info_files auth autotype bovine calc ccmode cl dbus dired-x ebrowse ede ediff edt efaq eglot eieio eintr elisp emacs-gnutls emacs-mime emacs epa erc ert eshell eudc eww flymake forms gnus htmlfontify idlwave ido mairix-el message mh-e modus-themes newsticker nxml-mode octave-mode org pcl-cvs pgg rcirc reftex remember sasl sc semantic ses sieve smtpmail speedbar srecode todo-mode tramp transient url use-package vhdl-mode vip viper vtable widget wisent woman
 
 for info_f in %info_files; do
     echo "%{_infodir}/${info_f}.info*" >> info-filelist
@@ -405,8 +450,11 @@ cat el-*-files common-lisp-dir-files > el-filelist
 rm %{buildroot}%{_datadir}/icons/hicolor/scalable/mimetypes/emacs-document23.svg
 
 # Install all the pdmp with fingerprints
-gtk_pdmp="emacs-$(./build-gtk/src/emacs --fingerprint 2>&1 | sed 's/.* //').pdmp"
-install -p -m 0644 build-gtk/src/emacs.pdmp %{buildroot}%{emacs_libexecdir}/${gtk_pdmp}
+pgtk_pdmp="emacs-$(./build-pgtk/src/emacs --fingerprint 2>&1 | sed 's/.* //').pdmp"
+install -p -m 0644 build-pgtk/src/emacs.pdmp %{buildroot}%{emacs_libexecdir}/${pgtk_pdmp}
+
+gtkx11_pdmp="emacs-$(./build-gtk+x11/src/emacs --fingerprint 2>&1 | sed 's/.* //').pdmp"
+install -p -m 0644 build-gtk+x11/src/emacs.pdmp %{buildroot}%{emacs_libexecdir}/${gtkx11_pdmp}
 
 lucid_pdmp="emacs-$(./build-lucid/src/emacs --fingerprint 2>&1 | sed 's/.* //').pdmp"
 install -p -m 0644 build-lucid/src/emacs.pdmp %{buildroot}%{emacs_libexecdir}/${lucid_pdmp}
@@ -415,16 +463,22 @@ nox_pdmp="emacs-$(./build-nox/src/emacs --fingerprint 2>&1 | sed 's/.* //').pdmp
 install -p -m 0644 build-nox/src/emacs.pdmp %{buildroot}%{emacs_libexecdir}/${nox_pdmp}
 
 # Install native compiled Lisp of all builds
-gtk_comp_native_ver=$(ls -1 build-gtk/native-lisp)
+pgtk_comp_native_ver=$(ls -1 build-pgtk/native-lisp)
+gtkx11_comp_native_ver=$(ls -1 build-gtk+x11/native-lisp)
 lucid_comp_native_ver=$(ls -1 build-lucid/native-lisp)
 nox_comp_native_ver=$(ls -1 build-nox/native-lisp)
-cp -ar build-gtk/native-lisp/${gtk_comp_native_ver} %{buildroot}%{native_lisp}
+cp -ar build-pgtk/native-lisp/${pgtk_comp_native_ver} %{buildroot}%{native_lisp}
+cp -ar build-gtk+x11/native-lisp/${gtkx11_comp_native_ver} %{buildroot}%{native_lisp}
 cp -ar build-lucid/native-lisp/${lucid_comp_native_ver} %{buildroot}%{native_lisp}
 cp -ar build-nox/native-lisp/${nox_comp_native_ver} %{buildroot}%{native_lisp}
 
 (TOPDIR=${PWD}
  cd %{buildroot}
- find .%{native_lisp}/${gtk_comp_native_ver} \( -type f -name '*eln' -fprintf $TOPDIR/gtk-eln-filelist "%%%%attr(755,-,-) %%p\n" \) -o \( -type d -fprintf $TOPDIR/gtk-dirs "%%%%dir %%p\n" \)
+ find .%{native_lisp}/${gtkx11_comp_native_ver} \( -type f -name '*eln' -fprintf $TOPDIR/gtk+x11-eln-filelist "%%%%attr(755,-,-) %%p\n" \) -o \( -type d -fprintf $TOPDIR/gtk+x11-dirs "%%%%dir %%p\n" \)
+)
+(TOPDIR=${PWD}
+ cd %{buildroot}
+ find .%{native_lisp}/${pgtk_comp_native_ver} \( -type f -name '*eln' -fprintf $TOPDIR/pgtk-eln-filelist "%%%%attr(755,-,-) %%p\n" \) -o \( -type d -fprintf $TOPDIR/pgtk-dirs "%%%%dir %%p\n" \)
 )
 (TOPDIR=${PWD}
  cd %{buildroot}
@@ -434,7 +488,8 @@ cp -ar build-nox/native-lisp/${nox_comp_native_ver} %{buildroot}%{native_lisp}
  cd %{buildroot}
  find .%{native_lisp}/${nox_comp_native_ver} \( -type f -name '*eln' -fprintf $TOPDIR/nox-eln-filelist "%%%%attr(755,-,-) %%p\n" \) -o \( -type d -fprintf $TOPDIR/nox-dirs "%%%%dir %%p\n" \)
 )
-echo %{emacs_libexecdir}/${gtk_pdmp} >> gtk-eln-filelist
+echo %{emacs_libexecdir}/${pgtk_pdmp} >> pgtk-eln-filelist
+echo %{emacs_libexecdir}/${gtkx11_pdmp} >> gtk+x11-eln-filelist
 echo %{emacs_libexecdir}/${lucid_pdmp} >> lucid-eln-filelist
 echo %{emacs_libexecdir}/${nox_pdmp} >> nox-eln-filelist
 
@@ -467,6 +522,14 @@ desktop-file-validate %{buildroot}/%{_datadir}/applications/*.desktop
 %{_sbindir}/alternatives --install %{_bindir}/emacs emacs %{_bindir}/emacs-%{version}-lucid 70 || :
 %{_sbindir}/alternatives --install %{_bindir}/emacs-lucid emacs-lucid %{_bindir}/emacs-%{version}-lucid 60 || :
 
+%preun gtk+x11
+%{_sbindir}/alternatives --remove emacs %{_bindir}/emacs-%{version}-gtk+x11 || :
+%{_sbindir}/alternatives --remove emacs-gtk+x11 %{_bindir}/emacs-%{version}-gtk+x11 || :
+
+%posttrans gtk+x11
+%{_sbindir}/alternatives --install %{_bindir}/emacs emacs %{_bindir}/emacs-%{version}-gtk+x11 75 || :
+%{_sbindir}/alternatives --install %{_bindir}/emacs-gtk+x11 emacs-gtk+x11 %{_bindir}/emacs-%{version}-gtk+x11 60 || :
+
 %preun nox
 %{_sbindir}/alternatives --remove emacs %{_bindir}/emacs-%{version}-nox || :
 %{_sbindir}/alternatives --remove emacs-nox %{_bindir}/emacs-%{version}-nox || :
@@ -482,16 +545,22 @@ desktop-file-validate %{buildroot}/%{_datadir}/applications/*.desktop
 %{_sbindir}/alternatives --install %{_bindir}/etags emacs.etags %{_bindir}/etags.emacs 80 \
        --slave %{_mandir}/man1/etags.1.gz emacs.etags.man %{_mandir}/man1/etags.emacs.1.gz || :
 
-%files -f gtk-eln-filelist -f gtk-dirs
+%files -f pgtk-eln-filelist -f pgtk-dirs
 %{_bindir}/emacs-%{version}
 %attr(0755,-,-) %ghost %{_bindir}/emacs
 %{_datadir}/applications/emacs.desktop
 %{_datadir}/applications/emacs-mail.desktop
 %{_metainfodir}/%{name}.metainfo.xml
+%{_datadir}/glib-2.0/schemas/org.gnu.emacs.defaults.gschema.xml
 %{_datadir}/icons/hicolor/*/apps/emacs.png
 %{_datadir}/icons/hicolor/scalable/apps/emacs.svg
 %{_datadir}/icons/hicolor/scalable/apps/emacs.ico
 %{_datadir}/icons/hicolor/scalable/mimetypes/emacs-document.svg
+
+%files gtk+x11 -f gtk+x11-eln-filelist -f gtk+x11-dirs
+%{_bindir}/emacs-%{version}-gtk+x11
+%attr(0755,-,-) %ghost %{_bindir}/emacs
+%attr(0755,-,-) %ghost %{_bindir}/emacs-gtk+x11
 
 %files lucid -f lucid-eln-filelist -f lucid-dirs
 %{_bindir}/emacs-%{version}-lucid
@@ -510,6 +579,7 @@ desktop-file-validate %{buildroot}/%{_datadir}/applications/*.desktop
 %doc doc/NEWS BUGS README
 %{_bindir}/ebrowse
 %{_bindir}/emacsclient
+%{_bindir}/emacs-desktop
 %{_bindir}/etags.emacs
 %{_bindir}/gctags
 %{_mandir}/man1/ebrowse.1*
@@ -542,6 +612,11 @@ desktop-file-validate %{buildroot}/%{_datadir}/applications/*.desktop
 %{_includedir}/emacs-module.h
 
 %changelog
+* Mon Apr 10 2023 Peter Oliver <rpm@mavit.org.uk> - 1:29.0.90-1
+- Update to version 29.0.90.
+- Build with pure GTK (for Wayland), and make it the default.  GTK for
+  X11 is now in an emacs-gtk+x11 subpackage.
+
 * Tue Feb 28 2023 Bhavin Gandhi <bhavin192@fedoraproject.org> - 1:28.3-0.1
 - Emacs 28.3-rc1
 
@@ -555,7 +630,7 @@ desktop-file-validate %{buildroot}/%{_datadir}/applications/*.desktop
 - Don't include everything in %%emacs_libexecdir in common subpackage, fixes rhbz#2160550
 - Don't remove exec permissions from eln files, fixes rhbz#2160547
 
-* Tue Dec 31 2022 Dan Čermák <dan.cermak@cgc-instruments.com> - 1:28.2-1
+* Sat Dec 31 2022 Dan Čermák <dan.cermak@cgc-instruments.com> - 1:28.2-1
 - New upstream release 28.2, fixes rhbz#2126048
 - Add patch to fix CVE-2022-45939, fixes rhbz#2149381
 - spawn native-compilation processes with -Q rhbz#2155824 (petersen)
