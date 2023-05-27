@@ -1,5 +1,5 @@
 [![Copr build status](https://copr.fedorainfracloud.org/coprs/bhavin192/emacs-pretest/package/emacs/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/bhavin192/emacs-pretest/package/emacs/)
-
+This RPM recipe is forked from Bhavin's repo at https://gitlab.com/bhavin192/emacs-pretest-rpm.git.
 ## Pretest version builds of GNU Emacs
 - [EmacsWiki: Emacs Pretest](https://www.emacswiki.org/emacs/EmacsPretest)
 - [https://alpha.gnu.org/gnu/emacs/pretest/](https://alpha.gnu.org/gnu/emacs/pretest/)
