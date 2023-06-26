@@ -1,5 +1,5 @@
 %global _hardened_build 1
-%global pretest_version 29.0.91
+%global pretest_version 29.0.92
 
 # This file is encoded in UTF-8.  -*- coding: utf-8 -*-
 Summary:       GNU Emacs text editor
@@ -612,6 +612,9 @@ desktop-file-validate %{buildroot}/%{_datadir}/applications/*.desktop
 %{_includedir}/emacs-module.h
 
 %changelog
+* Mon Jun 26 2023 Andreas Theodosiou <atheodosiou@protonmail.ch> - 1:29.0.92-1
+- Update to version 29.0.92.
+
 * Tue May 16 2023 Peter Oliver <rpm@mavit.org.uk> - 1:29.0.91-1
 - Update to version 29.0.91.
 
