@@ -1,16 +1,16 @@
 %global _hardened_build 1
-%global pretest_version 29.0.92
+%global pretest_version 29.1
 
 # This file is encoded in UTF-8.  -*- coding: utf-8 -*-
 Summary:       GNU Emacs text editor
 Name:          emacs
 Epoch:         1
-Version:       %{pretest_version}
-Release:       1%{?dist}
+Version:       29.1
+Release:       0.1%{?dist}
 License:       GPLv3+ and CC0
 URL:           http://www.gnu.org/software/emacs/
-Source0:       https://alpha.gnu.org/gnu/emacs/pretest/emacs-%{pretest_version}.tar.xz
-Source1:       https://alpha.gnu.org/gnu/emacs/pretest/emacs-%{pretest_version}.tar.xz.sig
+Source0:       https://ftp.gnu.org/gnu/emacs/emacs-%{version}.tar.xz
+Source1:       https://ftp.gnu.org/gnu/emacs/emacs-%{version}.tar.xz.sig
 # Eli Zaretskii's key
 Source2:       https://keys.openpgp.org/vks/v1/by-fingerprint/17E90D521672C04631B1183EE78DAE0F3115E06B
 Source3:       https://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;f=lib/cdefs.h;hb=refs/heads/master#./cdefs.h
@@ -612,6 +612,9 @@ desktop-file-validate %{buildroot}/%{_datadir}/applications/*.desktop
 %{_includedir}/emacs-module.h
 
 %changelog
+* Mon Jul 31 2023 Andreas Theodosiou <atheodosiou@protonmail.ch> - 1:29.1-1
+- Emacs 29.1
+
 * Mon Jun 26 2023 Andreas Theodosiou <atheodosiou@protonmail.ch> - 1:29.0.92-1
 - Update to version 29.0.92.
 
